@@ -3,8 +3,8 @@ import { TILE_SIZE } from '../constants.js';
 // Sprite definitions: maps unit type -> sprite config
 // Each entry is added as the user provides hand-drawn sprites
 const SPRITE_DEFS = {
-  combatMech: {
-    src: 'assets/sprites/combatMech.png',
+  cannonMech: {
+    src: 'assets/sprites/cannonMech.png',
     frameWidth: 64,
     frameHeight: 64,
     idle: [0],
