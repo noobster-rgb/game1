@@ -1,5 +1,6 @@
 import { getMovementRange } from '../utils/grid.js';
 import { createMoveAnimation } from './animation.js';
+import { playMoveSound } from './audio.js';
 
 export function showMovementRange(state, unit) {
   if (unit.moved) {
@@ -17,6 +18,7 @@ export function moveUnit(state, unitId, targetX, targetY) {
   const fromY = unit.y;
 
   // Create movement animation
+  playMoveSound();
   const anim = createMoveAnimation(unit, fromX, fromY, targetX, targetY, () => {
     unit.x = targetX;
     unit.y = targetY;

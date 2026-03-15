@@ -17,6 +17,7 @@ export function render(state) {
   drawHighlights(state);
   drawUnits(state);
   drawAnimations(state);
+  drawVFX(state);
   drawMessage(state);
 }
 
@@ -241,12 +242,283 @@ function drawMovedOverlay(state, unit, px, py, isPlayer) {
 
 function drawAnimations(state) {
   for (const anim of state.animations) {
+    if (anim.type.startsWith('vfx_')) continue; // drawn separately
     const unit = state.units.find(u => u.id === anim.unitId);
     if (!unit) continue;
     const px = anim.currentX * TILE_SIZE;
     const py = anim.currentY * TILE_SIZE;
     drawUnit(state, unit, px, py);
   }
+}
+
+function drawVFX(state) {
+  for (const anim of state.animations) {
+    if (!anim.type.startsWith('vfx_')) continue;
+    const t = anim.progress || 0;
+
+    if (anim.type === 'vfx_impact') {
+      drawImpactEffect(anim, t);
+    } else if (anim.type === 'vfx_projectile') {
+      drawProjectileEffect(anim, t);
+    } else if (anim.type === 'vfx_beam') {
+      drawBeamEffect(anim, t);
+    } else if (anim.type === 'vfx_explosion') {
+      drawExplosionEffect(anim, t);
+    } else if (anim.type === 'vfx_slash') {
+      drawSlashEffect(anim, t);
+    }
+  }
+}
+
+function drawImpactEffect(anim, t) {
+  const cx = (anim.x + 0.5) * TILE_SIZE;
+  const cy = (anim.y + 0.5) * TILE_SIZE;
+  const maxRadius = TILE_SIZE * 0.6;
+
+  ctx.save();
+  // Expanding ring
+  const ringRadius = maxRadius * t;
+  const alpha = 1 - t;
+  ctx.strokeStyle = anim.color;
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = 4 * (1 - t) + 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Inner flash (first half)
+  if (t < 0.5) {
+    const flashAlpha = 1 - t * 2;
+    ctx.globalAlpha = flashAlpha * 0.6;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, maxRadius * 0.3 * (1 - t), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Spark particles
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = anim.color;
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2 + t * 2;
+    const dist = ringRadius * 0.8 + t * TILE_SIZE * 0.2;
+    const sx = cx + Math.cos(angle) * dist;
+    const sy = cy + Math.sin(angle) * dist;
+    const size = 3 * (1 - t);
+    ctx.fillRect(sx - size / 2, sy - size / 2, size, size);
+  }
+  ctx.restore();
+}
+
+function drawProjectileEffect(anim, t) {
+  const cx = (anim.currentX + 0.5) * TILE_SIZE;
+  const cy = (anim.currentY + 0.5) * TILE_SIZE;
+
+  ctx.save();
+  // Arc height (parabola peaking at midpoint)
+  const arcHeight = -TILE_SIZE * 1.5 * Math.sin(t * Math.PI);
+  const drawY = cy + arcHeight;
+
+  // Shadow on ground
+  ctx.globalAlpha = 0.3 * (1 - t * 0.5);
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + TILE_SIZE * 0.3, 6, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Projectile glow
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = anim.color;
+  ctx.beginPath();
+  ctx.arc(cx, drawY, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Projectile core
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(cx, drawY, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Trail
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = anim.color;
+  const trailLen = 3;
+  for (let i = 1; i <= trailLen; i++) {
+    const tt = Math.max(0, t - i * 0.05);
+    const eased = 1 - (1 - tt) * (1 - tt);
+    const tx = (anim.fromX + (anim.toX - anim.fromX) * eased + 0.5) * TILE_SIZE;
+    const ty = (anim.fromY + (anim.toY - anim.fromY) * eased + 0.5) * TILE_SIZE + (-TILE_SIZE * 1.5 * Math.sin(tt * Math.PI));
+    ctx.globalAlpha = 0.3 * (1 - i / (trailLen + 1));
+    ctx.beginPath();
+    ctx.arc(tx, ty, 3 - i * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawBeamEffect(anim, t) {
+  const fromCx = (anim.fromX + 0.5) * TILE_SIZE;
+  const fromCy = (anim.fromY + 0.5) * TILE_SIZE;
+  const toCx = (anim.toX + 0.5) * TILE_SIZE;
+  const toCy = (anim.toY + 0.5) * TILE_SIZE;
+
+  ctx.save();
+  // Beam appears, holds, then fades
+  let beamAlpha;
+  let beamWidth;
+  if (t < 0.15) {
+    // Charge up
+    beamAlpha = t / 0.15;
+    beamWidth = 2 + 6 * (t / 0.15);
+  } else if (t < 0.7) {
+    // Full beam
+    beamAlpha = 1;
+    beamWidth = 8;
+  } else {
+    // Fade out
+    beamAlpha = 1 - (t - 0.7) / 0.3;
+    beamWidth = 8 * beamAlpha;
+  }
+
+  // Outer glow
+  ctx.globalAlpha = beamAlpha * 0.3;
+  ctx.strokeStyle = anim.color;
+  ctx.lineWidth = beamWidth * 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(fromCx, fromCy);
+  ctx.lineTo(toCx, toCy);
+  ctx.stroke();
+
+  // Core beam
+  ctx.globalAlpha = beamAlpha * 0.8;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = beamWidth;
+  ctx.beginPath();
+  ctx.moveTo(fromCx, fromCy);
+  ctx.lineTo(toCx, toCy);
+  ctx.stroke();
+
+  // Inner bright core
+  ctx.globalAlpha = beamAlpha;
+  ctx.strokeStyle = anim.color;
+  ctx.lineWidth = beamWidth * 0.4;
+  ctx.beginPath();
+  ctx.moveTo(fromCx, fromCy);
+  ctx.lineTo(toCx, toCy);
+  ctx.stroke();
+
+  // Impact flash at end
+  if (t > 0.1 && t < 0.8) {
+    ctx.globalAlpha = beamAlpha * 0.5;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(toCx, toCy, beamWidth * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawExplosionEffect(anim, t) {
+  const cx = (anim.x + 0.5) * TILE_SIZE;
+  const cy = (anim.y + 0.5) * TILE_SIZE;
+  const maxRadius = TILE_SIZE * (0.6 + anim.radius * 0.4);
+
+  ctx.save();
+  // Expanding fireball (first half)
+  if (t < 0.4) {
+    const fireT = t / 0.4;
+    const radius = maxRadius * fireT;
+    ctx.globalAlpha = 0.7 * (1 - fireT * 0.5);
+    ctx.fillStyle = anim.color;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // White core
+    ctx.globalAlpha = 0.9 * (1 - fireT);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Expanding rings
+  const ringAlpha = 1 - t;
+  ctx.globalAlpha = ringAlpha * 0.6;
+  ctx.strokeStyle = anim.color;
+  ctx.lineWidth = 3 * (1 - t);
+  ctx.beginPath();
+  ctx.arc(cx, cy, maxRadius * t, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Second ring (delayed)
+  if (t > 0.15) {
+    const t2 = (t - 0.15) / 0.85;
+    ctx.globalAlpha = (1 - t2) * 0.4;
+    ctx.lineWidth = 2 * (1 - t2);
+    ctx.beginPath();
+    ctx.arc(cx, cy, maxRadius * 1.3 * t2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Debris particles
+  ctx.fillStyle = anim.color;
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2 + 0.3;
+    const speed = 0.7 + (i % 3) * 0.3;
+    const dist = maxRadius * t * speed;
+    const px = cx + Math.cos(angle) * dist;
+    const py = cy + Math.sin(angle) * dist - (1 - t) * TILE_SIZE * 0.3;
+    const size = 4 * (1 - t);
+    ctx.globalAlpha = (1 - t) * 0.8;
+    ctx.fillRect(px - size / 2, py - size / 2, size, size);
+  }
+  ctx.restore();
+}
+
+function drawSlashEffect(anim, t) {
+  const cx = (anim.x + 0.5) * TILE_SIZE;
+  const cy = (anim.y + 0.5) * TILE_SIZE;
+  const size = TILE_SIZE * 0.7;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  const alpha = t < 0.5 ? 1 : 1 - (t - 0.5) * 2;
+  ctx.globalAlpha = alpha;
+
+  // Slash arc 1
+  ctx.strokeStyle = anim.color;
+  ctx.lineWidth = 3 * (1 - t) + 1;
+  ctx.lineCap = 'round';
+  const slashProgress = Math.min(t * 3, 1);
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 0.5, -Math.PI * 0.7, -Math.PI * 0.7 + Math.PI * 1.2 * slashProgress);
+  ctx.stroke();
+
+  // Slash arc 2 (delayed, opposite)
+  if (t > 0.15) {
+    const t2 = Math.min((t - 0.15) * 3, 1);
+    ctx.globalAlpha = alpha * 0.7;
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.35, Math.PI * 0.3, Math.PI * 0.3 + Math.PI * 1.0 * t2);
+    ctx.stroke();
+  }
+
+  // Impact sparks
+  ctx.fillStyle = anim.color;
+  for (let i = 0; i < 4; i++) {
+    const angle = (i / 4) * Math.PI * 2 + t * 3;
+    const dist = size * 0.4 * t;
+    ctx.globalAlpha = (1 - t) * 0.6;
+    const sx = Math.cos(angle) * dist;
+    const sy = Math.sin(angle) * dist;
+    ctx.fillRect(sx - 2, sy - 2, 4 * (1 - t), 4 * (1 - t));
+  }
+
+  ctx.restore();
 }
 
 function drawMessage(state) {

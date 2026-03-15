@@ -54,6 +54,7 @@ export const COLORS = {
 
 // Animation
 export const ANIM_MOVE_DURATION = 200; // ms
+export const ANIM_ENEMY_MOVE_DURATION = 250; // 25% slower than player
 export const ANIM_ATTACK_DURATION = 300;
 export const ANIM_PUSH_DURATION = 200;
 export const ENEMY_ACTION_DELAY = 600; // ms between enemy actions

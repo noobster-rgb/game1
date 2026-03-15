@@ -4,6 +4,7 @@ import { getObjectiveStatus } from './objectives.js';
 import { emit } from '../utils/events.js';
 
 let elements = {};
+let lastAbilityHtml = '';
 
 export function initUI() {
   elements = {
@@ -124,7 +125,10 @@ function updateAbilityPanel(state) {
     : null;
 
   if (!unit || unit.hp <= 0 || unit.team !== TEAM.PLAYER || unit.acted) {
-    elements.abilityPanel.innerHTML = '';
+    if (lastAbilityHtml !== '') {
+      elements.abilityPanel.innerHTML = '';
+      lastAbilityHtml = '';
+    }
     return;
   }
 
@@ -138,7 +142,10 @@ function updateAbilityPanel(state) {
     </button>`;
   }
 
-  elements.abilityPanel.innerHTML = html;
+  if (html !== lastAbilityHtml) {
+    elements.abilityPanel.innerHTML = html;
+    lastAbilityHtml = html;
+  }
 }
 
 export function showMissionSelect(missions, onSelect) {
