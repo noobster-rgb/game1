@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mech Tactics</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="game-container">
+    <div class="canvas-wrapper">
+      <canvas id="game-canvas"></canvas>
+      <div id="hover-tooltip" class="hover-tooltip" style="display:none"></div>
+    </div>
+
+    <div class="side-panel">
+      <div class="info-box">
+        <h3>Mission</h3>
+        <div id="turn-info">Turn 1/5</div>
+        <div id="phase-info" class="phase-display player-phase">Your Turn</div>
+      </div>
+
+      <div class="info-box">
+        <h3>Grid Power</h3>
+        <div id="grid-power">Grid Power: 7/7</div>
+        <div class="power-bar-bg">
+          <div id="grid-power-bar" class="power-bar-fill" style="width: 100%"></div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <h3>Selected Unit</h3>
+        <div id="unit-info">
+          <span class="no-selection">Click a mech to select</span>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <h3>Abilities</h3>
+        <div id="ability-panel"></div>
+      </div>
+
+      <div class="info-box">
+        <h3>Objectives</h3>
+        <div id="objectives-panel"></div>
+      </div>
+
+      <button id="end-turn-btn">End Turn</button>
+      <button id="restart-btn" style="display:none">New Mission</button>
+    </div>
+  </div>
+
+  <!-- Game Over / Victory overlay -->
+  <div id="message-overlay" class="message-overlay">
+    <div class="overlay-content">
+      <div class="overlay-title">VICTORY!</div>
+      <div class="overlay-subtitle">Mission Complete</div>
+    </div>
+  </div>
+
+  <!-- Mission Select -->
+  <div id="mission-select"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
