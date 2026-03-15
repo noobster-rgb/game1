@@ -53,7 +53,8 @@ function init() {
 
   on('abilityClick', ({ abilityId, unitId }) => {
     if (!state || state.phase !== PHASE.PLAYER_PHASE) return;
-    const unit = state.units.find(u => u.id === unitId);
+    const numericId = Number(unitId);
+    const unit = state.units.find(u => u.id === numericId);
     if (!unit) return;
     const ability = unit.abilities.find(a => a.id === abilityId);
     if (!ability) return;
