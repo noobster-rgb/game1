@@ -7,6 +7,21 @@ let canvas;
 let portraitCtx;
 let portraitCanvas;
 
+// Portrait images keyed by unit type
+const portraitImages = {};
+const PORTRAIT_PATHS = {
+  cannonMech: 'assets/portraits/cannonMech.png',
+};
+
+function loadPortraits() {
+  for (const [type, src] of Object.entries(PORTRAIT_PATHS)) {
+    const img = new Image();
+    img.onload = () => { portraitImages[type] = img; };
+    img.onerror = () => { console.warn(`Failed to load portrait: ${src}`); };
+    img.src = src;
+  }
+}
+
 export function initRenderer(canvasEl) {
   canvas = canvasEl;
   ctx = canvas.getContext('2d');
@@ -17,6 +32,8 @@ export function initRenderer(canvasEl) {
     portraitCtx = portraitCanvas.getContext('2d');
     portraitCtx.imageSmoothingEnabled = false;
   }
+
+  loadPortraits();
 }
 
 export function render(state) {
@@ -559,6 +576,14 @@ export function renderPortrait(state) {
   if (!unit || unit.hp <= 0) return;
 
   const isPlayer = unit.team === TEAM.PLAYER;
+
+  // Try portrait image first
+  const portraitImg = portraitImages[unit.type];
+  if (portraitImg) {
+    portraitCtx.drawImage(portraitImg, 0, 0, pw, ph);
+    drawPortraitOverlay(unit, isPlayer, pw, ph);
+    return;
+  }
 
   // Try sprite-based rendering
   const frame = getSpriteFrame(unit, state);
