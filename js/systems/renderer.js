@@ -4,11 +4,19 @@ import { getSpriteFrame } from './sprites.js';
 
 let ctx;
 let canvas;
+let portraitCtx;
+let portraitCanvas;
 
 export function initRenderer(canvasEl) {
   canvas = canvasEl;
   ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false; // pixel art look
+
+  portraitCanvas = document.getElementById('portrait-canvas');
+  if (portraitCanvas) {
+    portraitCtx = portraitCanvas.getContext('2d');
+    portraitCtx.imageSmoothingEnabled = false;
+  }
 }
 
 export function render(state) {
@@ -534,6 +542,96 @@ function drawMessage(state) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(state.message, canvas.width / 2, my + msgHeight / 2);
+}
+
+export function renderPortrait(state) {
+  if (!portraitCtx) return;
+  const pw = portraitCanvas.width;
+  const ph = portraitCanvas.height;
+  portraitCtx.clearRect(0, 0, pw, ph);
+
+  // Dark background
+  portraitCtx.fillStyle = '#0e1525';
+  portraitCtx.fillRect(0, 0, pw, ph);
+
+  if (state.selectedUnitId == null) return;
+  const unit = state.units.find(u => u.id === state.selectedUnitId);
+  if (!unit || unit.hp <= 0) return;
+
+  const isPlayer = unit.team === TEAM.PLAYER;
+
+  // Try sprite-based rendering
+  const frame = getSpriteFrame(unit, state);
+  if (frame) {
+    portraitCtx.drawImage(
+      frame.image,
+      frame.sx, frame.sy, frame.sw, frame.sh,
+      8, 8, pw - 16, ph - 16,
+    );
+    drawPortraitOverlay(unit, isPlayer, pw, ph);
+    return;
+  }
+
+  // Procedural portrait (larger version of the unit)
+  const s = unit.sprite || { body: '#888', accent: '#666', symbol: '?' };
+  const cx = pw / 2;
+  const cy = ph / 2;
+  const size = pw * 0.28;
+
+  // Background glow
+  portraitCtx.fillStyle = isPlayer ? 'rgba(68, 136, 204, 0.15)' : 'rgba(204, 68, 68, 0.15)';
+  portraitCtx.beginPath();
+  portraitCtx.arc(cx, cy, size * 1.8, 0, Math.PI * 2);
+  portraitCtx.fill();
+
+  // Body
+  portraitCtx.fillStyle = s.body;
+  if (isPlayer) {
+    // Mech body
+    portraitCtx.fillRect(cx - size, cy - size * 1.1, size * 2, size * 2);
+    // Arms
+    portraitCtx.fillStyle = s.accent;
+    portraitCtx.fillRect(cx - size * 1.3, cy - size * 0.8, size * 0.5, size * 1.4);
+    portraitCtx.fillRect(cx + size * 0.8, cy - size * 0.8, size * 0.5, size * 1.4);
+    // Head
+    portraitCtx.fillStyle = s.body;
+    portraitCtx.fillRect(cx - size * 0.6, cy - size * 1.7, size * 1.2, size * 0.7);
+    // Visor
+    portraitCtx.fillStyle = '#aaddff';
+    portraitCtx.fillRect(cx - size * 0.4, cy - size * 1.5, size * 0.8, size * 0.3);
+    // Visor glow
+    portraitCtx.fillStyle = 'rgba(170, 221, 255, 0.3)';
+    portraitCtx.fillRect(cx - size * 0.5, cy - size * 1.55, size * 1.0, size * 0.4);
+  } else {
+    // Bug body
+    portraitCtx.beginPath();
+    portraitCtx.ellipse(cx, cy, size * 1.2, size * 1.0, 0, 0, Math.PI * 2);
+    portraitCtx.fill();
+    // Eyes
+    portraitCtx.fillStyle = '#ff4444';
+    portraitCtx.fillRect(cx - size * 0.6, cy - size * 0.5, size * 0.35, size * 0.35);
+    portraitCtx.fillRect(cx + size * 0.25, cy - size * 0.5, size * 0.35, size * 0.35);
+    // Mandibles
+    portraitCtx.fillStyle = s.accent;
+    portraitCtx.fillRect(cx - size * 0.3, cy + size * 0.2, size * 0.6, size * 0.2);
+  }
+
+  // Symbol
+  portraitCtx.fillStyle = '#fff';
+  portraitCtx.font = `bold ${Math.floor(pw * 0.2)}px monospace`;
+  portraitCtx.textAlign = 'center';
+  portraitCtx.textBaseline = 'middle';
+  portraitCtx.fillText(s.symbol, cx, cy + 2);
+
+  drawPortraitOverlay(unit, isPlayer, pw, ph);
+}
+
+function drawPortraitOverlay(unit, isPlayer, pw, ph) {
+  // Team color border accent (inner glow)
+  const borderColor = isPlayer ? 'rgba(68, 136, 204, 0.5)' : 'rgba(204, 68, 68, 0.5)';
+  portraitCtx.strokeStyle = borderColor;
+  portraitCtx.lineWidth = 2;
+  portraitCtx.strokeRect(1, 1, pw - 2, ph - 2);
 }
 
 export { drawUnit };

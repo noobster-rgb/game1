@@ -8,6 +8,23 @@
 </head>
 <body>
   <div class="game-container">
+    <div class="left-panel">
+      <div class="info-box unit-panel">
+        <h3>Selected Unit</h3>
+        <div class="portrait-frame">
+          <canvas id="portrait-canvas" width="128" height="128"></canvas>
+        </div>
+        <div id="unit-info">
+          <span class="no-selection">Click a mech to select</span>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <h3>Abilities</h3>
+        <div id="ability-panel"></div>
+      </div>
+    </div>
+
     <div class="canvas-wrapper">
       <canvas id="game-canvas"></canvas>
       <div id="hover-tooltip" class="hover-tooltip" style="display:none"></div>
@@ -26,18 +43,6 @@
         <div class="power-bar-bg">
           <div id="grid-power-bar" class="power-bar-fill" style="width: 100%"></div>
         </div>
-      </div>
-
-      <div class="info-box">
-        <h3>Selected Unit</h3>
-        <div id="unit-info">
-          <span class="no-selection">Click a mech to select</span>
-        </div>
-      </div>
-
-      <div class="info-box">
-        <h3>Abilities</h3>
-        <div id="ability-panel"></div>
       </div>
 
       <div class="info-box">

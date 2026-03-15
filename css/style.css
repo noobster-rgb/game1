@@ -17,8 +17,8 @@ body {
 
 .game-container {
   display: flex;
-  gap: 20px;
-  max-width: 1000px;
+  gap: 16px;
+  max-width: 1200px;
 }
 
 /* Canvas */
@@ -27,6 +27,7 @@ body {
   border: 3px solid #3a3a5e;
   border-radius: 4px;
   box-shadow: 0 0 20px rgba(0, 100, 200, 0.2);
+  flex-shrink: 0;
 }
 
 #game-canvas {
@@ -64,12 +65,22 @@ body {
   font-size: 10px;
 }
 
-/* Side Panel */
-.side-panel {
-  width: 240px;
+/* Left Panel (Unit + Abilities) */
+.left-panel {
+  width: 200px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Side Panel (Mission, Power, Objectives) */
+.side-panel {
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 /* Info boxes */
@@ -86,6 +97,24 @@ body {
   letter-spacing: 1px;
   color: #8888aa;
   margin-bottom: 8px;
+}
+
+/* Portrait */
+.portrait-frame {
+  width: 128px;
+  height: 128px;
+  margin: 0 auto 10px auto;
+  border: 2px solid #3a4a6e;
+  border-radius: 4px;
+  background: #0e1525;
+  overflow: hidden;
+}
+
+#portrait-canvas {
+  display: block;
+  width: 128px;
+  height: 128px;
+  image-rendering: pixelated;
 }
 
 /* Turn info */

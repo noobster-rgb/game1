@@ -1,6 +1,6 @@
 import { CANVAS_WIDTH, CANVAS_HEIGHT, PHASE, TEAM } from './constants.js';
 import { createState } from './state.js';
-import { initRenderer, render } from './systems/renderer.js';
+import { initRenderer, render, renderPortrait } from './systems/renderer.js';
 import { initInput, updateInputState } from './systems/input.js';
 import { updateAnimations } from './systems/animation.js';
 import { showMovementRange } from './systems/movement.js';
@@ -172,6 +172,7 @@ function gameLoop() {
     }
 
     render(state);
+    renderPortrait(state);
     updateUI(state);
   }
 
