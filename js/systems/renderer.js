@@ -30,7 +30,8 @@ export function initRenderer(canvasEl) {
   portraitCanvas = document.getElementById('portrait-canvas');
   if (portraitCanvas) {
     portraitCtx = portraitCanvas.getContext('2d');
-    portraitCtx.imageSmoothingEnabled = false;
+    portraitCtx.imageSmoothingEnabled = true;
+    portraitCtx.imageSmoothingQuality = 'high';
   }
 
   loadPortraits();
