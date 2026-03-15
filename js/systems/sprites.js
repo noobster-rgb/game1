@@ -3,16 +3,15 @@ import { TILE_SIZE } from '../constants.js';
 // Sprite definitions: maps unit type -> sprite config
 // Each entry is added as the user provides hand-drawn sprites
 const SPRITE_DEFS = {
-  // Example entry (uncommented when sprite is provided):
-  // combatMech: {
-  //   src: 'assets/sprites/combatMech.png',
-  //   frameWidth: 64,
-  //   frameHeight: 64,
-  //   idle: [0, 1, 2, 3],
-  //   attack: 4,
-  //   hurt: 5,
-  //   idleSpeed: 200,
-  // },
+  combatMech: {
+    src: 'assets/sprites/combatMech.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    idle: [0],
+    attack: null,
+    hurt: null,
+    idleSpeed: 200,
+  },
 };
 
 // Loaded images: Map<unitType, HTMLImageElement>
