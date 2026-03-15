@@ -7,19 +7,19 @@ const SPRITE_DEFS = {
     src: 'assets/sprites/combatMech.png',
     frameWidth: 64,
     frameHeight: 64,
-    idle: [0],
+    idle: [0, 1, 2, 3],
     attack: null,
     hurt: null,
-    idleSpeed: 200,
+    idleSpeed: 250,
   },
   cannonMech: {
     src: 'assets/sprites/cannonMech.png',
     frameWidth: 64,
     frameHeight: 64,
-    idle: [0],
+    idle: [0, 1, 2, 3],
     attack: null,
     hurt: null,
-    idleSpeed: 200,
+    idleSpeed: 250,
   },
 };
 
