@@ -1,13 +1,13 @@
 import { ANIM_MOVE_DURATION, ANIM_ATTACK_DURATION, ANIM_PUSH_DURATION, TILE_SIZE } from '../constants.js';
 
-export function createMoveAnimation(unit, fromX, fromY, toX, toY, onComplete) {
+export function createMoveAnimation(unit, fromX, fromY, toX, toY, onComplete, duration) {
   return {
     unitId: unit.id,
     type: 'move',
     fromX, fromY, toX, toY,
     currentX: fromX, currentY: fromY,
     startTime: performance.now(),
-    duration: ANIM_MOVE_DURATION,
+    duration: duration || ANIM_MOVE_DURATION,
     onComplete,
   };
 }

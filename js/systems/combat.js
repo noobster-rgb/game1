@@ -7,6 +7,10 @@ import {
   createExplosionVFX, createSlashVFX,
 } from './animation.js';
 import { emit } from '../utils/events.js';
+import {
+  playMeleeSound, playCannonSound, playArtillerySound,
+  playExplosionSound, playHitSound, playPushSound, playDeathSound,
+} from './audio.js';
 
 export function executeAttack(state, attackerId, ability, targetX, targetY) {
   const attacker = state.units.find(u => u.id === attackerId);
@@ -15,8 +19,10 @@ export function executeAttack(state, attackerId, ability, targetX, targetY) {
   if (ability.aoe) {
     // Ranged AoE: lob a projectile, then explode on arrival
     const anim = createAttackAnimation(attacker, targetX, targetY, () => {
+      playArtillerySound();
       const proj = createProjectileVFX(attacker.x, attacker.y, targetX, targetY, '#ff8844', () => {
         // Explosion on impact
+        playExplosionSound();
         state.animations.push(createExplosionVFX(targetX, targetY, 1, '#ff6622'));
         applyAttackEffects(state, attacker, ability, targetX, targetY);
         attacker.acted = true;
@@ -30,6 +36,7 @@ export function executeAttack(state, attackerId, ability, targetX, targetY) {
   } else if (ability.targetType === 'line') {
     // Line attack: fire a beam along the line
     const anim = createAttackAnimation(attacker, targetX, targetY, () => {
+      playCannonSound();
       const color = ability.push ? '#44ccff' : '#ff4444';
       const beam = createBeamVFX(attacker.x, attacker.y, targetX, targetY, color);
       beam.onComplete = () => {
@@ -46,6 +53,7 @@ export function executeAttack(state, attackerId, ability, targetX, targetY) {
   } else {
     // Melee attack: slash effect at target
     const anim = createAttackAnimation(attacker, targetX, targetY, () => {
+      playMeleeSound();
       const color = ability.damage >= 3 ? '#ff4444' : ability.damage >= 2 ? '#ffcc44' : '#ffffff';
       state.animations.push(createSlashVFX(targetX, targetY, color));
       state.animations.push(createImpactVFX(targetX, targetY, color));
@@ -113,8 +121,10 @@ function getLineDirection(fromX, fromY, toX, toY) {
 export function applyDamage(state, unit, damage) {
   unit.hp = Math.max(0, unit.hp - damage);
   unit.hurtUntil = performance.now() + 200; // Signal sprite system to show hurt frame
+  playHitSound();
   emit('unitDamaged', { unitId: unit.id, damage, hp: unit.hp });
   if (unit.hp <= 0) {
+    playDeathSound();
     emit('unitKilled', { unitId: unit.id, unit });
   }
 }
@@ -138,6 +148,7 @@ function applyDamageAt(state, x, y, damage) {
 
 export function applyPush(state, unit, dx, dy) {
   if (unit.hp <= 0) return;
+  playPushSound();
 
   const newX = unit.x + dx;
   const newY = unit.y + dy;

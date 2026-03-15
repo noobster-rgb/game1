@@ -1,8 +1,9 @@
-import { TEAM, TERRAIN, ENEMY_ACTION_DELAY } from '../constants.js';
+import { TEAM, TERRAIN, ENEMY_ACTION_DELAY, ANIM_ENEMY_MOVE_DURATION } from '../constants.js';
 import { getUnitAt, getAliveUnits, getTile } from '../state.js';
 import { getMovementRange, getAttackRange, manhattan, inBounds, isWalkable, DIRS } from '../utils/grid.js';
-import { moveUnit } from './movement.js';
+import { createMoveAnimation } from './animation.js';
 import { executeAttack } from './combat.js';
+import { playMoveSound } from './audio.js';
 
 export function runEnemyPhase(state, onComplete) {
   const enemies = getAliveUnits(state, TEAM.ENEMY);
@@ -28,34 +29,49 @@ export function runEnemyPhase(state, onComplete) {
 
     const action = decideAction(state, enemy);
 
-    if (action.moveTarget) {
-      // Move enemy
-      enemy.x = action.moveTarget.x;
-      enemy.y = action.moveTarget.y;
-      enemy.moved = true;
-    }
-
-    if (action.attackTarget && enemy.hp > 0) {
-      const ability = enemy.abilities[0];
-      setTimeout(() => {
-        if (enemy.hp <= 0) {
-          index++;
-          processNextEnemy();
-          return;
-        }
-        executeAttack(state, enemy.id, ability, action.attackTarget.x, action.attackTarget.y);
+    const afterMove = () => {
+      if (action.attackTarget && enemy.hp > 0) {
+        const ability = enemy.abilities[0];
+        setTimeout(() => {
+          if (enemy.hp <= 0) {
+            index++;
+            processNextEnemy();
+            return;
+          }
+          executeAttack(state, enemy.id, ability, action.attackTarget.x, action.attackTarget.y);
+          enemy.acted = true;
+          setTimeout(() => {
+            index++;
+            processNextEnemy();
+          }, ENEMY_ACTION_DELAY);
+        }, ENEMY_ACTION_DELAY / 2);
+      } else {
         enemy.acted = true;
         setTimeout(() => {
           index++;
           processNextEnemy();
         }, ENEMY_ACTION_DELAY);
-      }, ENEMY_ACTION_DELAY / 2);
+      }
+    };
+
+    if (action.moveTarget) {
+      playMoveSound();
+      const fromX = enemy.x;
+      const fromY = enemy.y;
+      const anim = createMoveAnimation(
+        enemy, fromX, fromY,
+        action.moveTarget.x, action.moveTarget.y,
+        () => {
+          enemy.x = action.moveTarget.x;
+          enemy.y = action.moveTarget.y;
+          enemy.moved = true;
+          afterMove();
+        },
+        ANIM_ENEMY_MOVE_DURATION,
+      );
+      state.animations.push(anim);
     } else {
-      enemy.acted = true;
-      setTimeout(() => {
-        index++;
-        processNextEnemy();
-      }, ENEMY_ACTION_DELAY);
+      afterMove();
     }
   }
 
