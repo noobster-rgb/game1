@@ -11,6 +11,7 @@ import { initUI, updateUI, showMissionSelect, hideMissionSelect } from './system
 import { getAttackRange } from './utils/grid.js';
 import { on, emit } from './utils/events.js';
 import { MISSIONS } from './data/missions.js';
+import { loadSprites } from './systems/sprites.js';
 
 let state = null;
 
@@ -21,6 +22,7 @@ function init() {
 
   initRenderer(canvas);
   initUI();
+  loadSprites(); // Fire-and-forget: game starts with procedural fallback, switches to sprites once loaded
 
   // Event handlers
   on('select', ({ unitId }) => {
