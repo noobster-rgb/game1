@@ -1,291 +1,226 @@
 """
-Generate a 64x64 pixel art sprite for the Combat Mech based on the hand-drawn image.
-The drawing shows:
-- A wide, flat manta/stingray-shaped body
-- Dark angular slash markings on top of the head
-- Multiple purple tentacles hanging down with suction cups/dots
-- Red/orange streaky coloring across the body
-- Green accent highlights
+Generate a 64x64 pixel art sprite for the Combat Mech - octopus monster style.
+Based on the hand-drawn image: big rounded head, dark slash markings on top,
+multiple purple tentacles with suction cups, menacing eyes.
 """
 
 from PIL import Image, ImageDraw
 
 img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
-draw = ImageDraw.Draw(img)
 
 # Color palette
 OUTLINE = (40, 40, 40, 255)
-BODY_LIGHT = (225, 220, 215, 255)
-BODY_MID = (200, 195, 190, 255)
-RED_STREAK = (210, 130, 100, 255)
-RED_DARK = (180, 100, 70, 255)
-ORANGE_STREAK = (220, 150, 100, 255)
-GREEN_ACC = (120, 180, 100, 255)
+HEAD_LIGHT = (210, 190, 195, 255)
+HEAD_MID = (185, 165, 170, 255)
+HEAD_DARK = (160, 140, 148, 255)
+RED_TINT = (195, 140, 130, 255)
+ORANGE_TINT = (210, 155, 120, 255)
 PURPLE_TENT = (140, 115, 185, 255)
-PURPLE_DARK = (110, 85, 155, 255)
-PURPLE_LIGHT = (165, 140, 210, 255)
-SUCKER = (195, 175, 130, 255)
+PURPLE_DARK = (105, 80, 150, 255)
+PURPLE_LIGHT = (170, 145, 215, 255)
+SUCKER = (200, 180, 120, 255)
+SUCKER_DARK = (170, 150, 95, 255)
 SLASH_DARK = (50, 45, 45, 255)
-SLASH_MID = (80, 75, 75, 255)
+EYE_GLOW = (220, 200, 50, 255)
+EYE_PUPIL = (180, 40, 30, 255)
+GREEN_ACC = (100, 170, 90, 255)
 
-def pixel(x, y, color):
+def px(x, y, color):
     if 0 <= x < 64 and 0 <= y < 64:
         img.putpixel((x, y), color)
 
 def hline(x1, x2, y, color):
     for x in range(x1, x2 + 1):
-        pixel(x, y, color)
+        px(x, y, color)
 
-def draw_pixels(coords, color):
-    for (x, y) in coords:
-        pixel(x, y, color)
+def fill_rows(rows, color):
+    for y, (x1, x2) in rows.items():
+        hline(x1, x2, y, color)
 
-# === WIDE FLAT BODY (manta/stingray shape) ===
-# The body is very wide and flat, pointed at the sides
+def outline_rows(rows):
+    for y, (x1, x2) in rows.items():
+        px(x1, y, OUTLINE)
+        px(x2, y, OUTLINE)
+    # top edge
+    ys = sorted(rows.keys())
+    if ys:
+        hline(rows[ys[0]][0], rows[ys[0]][1], ys[0], OUTLINE)
 
-# Top outline of body - wide angular shape
-# Row by row from top
-body_rows = {
-    8:  (26, 37),   # narrow top
-    9:  (23, 40),
-    10: (20, 43),
-    11: (17, 46),
-    12: (14, 49),
-    13: (11, 52),
-    14: (8, 55),
-    15: (6, 57),
-    16: (4, 59),
-    17: (3, 60),
-    18: (2, 61),
-    19: (1, 62),     # widest point
-    20: (1, 62),
-    21: (2, 61),
-    22: (3, 60),
-    23: (4, 59),
-    24: (5, 58),
-    25: (7, 56),
-    26: (9, 54),
-    27: (11, 52),
-    28: (14, 49),
-    29: (16, 47),
-    30: (18, 45),
+# === BIG ROUND OCTOPUS HEAD ===
+head = {
+    4:  (25, 38),
+    5:  (22, 41),
+    6:  (20, 43),
+    7:  (18, 45),
+    8:  (16, 47),
+    9:  (15, 48),
+    10: (14, 49),
+    11: (13, 50),
+    12: (12, 51),
+    13: (12, 51),
+    14: (11, 52),
+    15: (11, 52),
+    16: (11, 52),
+    17: (11, 52),
+    18: (12, 51),
+    19: (12, 51),
+    20: (13, 50),
+    21: (13, 50),
+    22: (14, 49),
+    23: (15, 48),
+    24: (16, 47),
+    25: (17, 46),
+    26: (18, 45),
+    27: (19, 44),
+    28: (20, 43),
 }
 
-# Draw body fill
-for y, (x1, x2) in body_rows.items():
-    for x in range(x1, x2 + 1):
-        pixel(x, y, BODY_LIGHT)
+# Fill head
+fill_rows(head, HEAD_LIGHT)
+# Shadow on lower portion
+for y in range(20, 29):
+    if y in head:
+        x1, x2 = head[y]
+        hline(x1 + 1, x2 - 1, y, HEAD_MID)
+for y in range(24, 29):
+    if y in head:
+        x1, x2 = head[y]
+        hline(x1 + 2, x2 - 2, y, HEAD_DARK)
 
-# Body shadow on lower half
-for y in range(24, 31):
-    if y in body_rows:
-        x1, x2 = body_rows[y]
-        for x in range(x1, x2 + 1):
-            pixel(x, y, BODY_MID)
-
-# Draw body outline
-for y, (x1, x2) in body_rows.items():
-    pixel(x1, y, OUTLINE)
-    pixel(x2, y, OUTLINE)
-
-# Top edge outline
-for y in [8]:
-    x1, x2 = body_rows[y]
-    hline(x1, x2, y, OUTLINE)
-
-# Bottom edge - connect the bottom rows
-for y in [30]:
-    x1, x2 = body_rows[y]
-    hline(x1, x2, y, OUTLINE)
-
-# === RED/ORANGE STREAKS across body ===
-# Horizontal streaky coloring
-for y in range(13, 28):
-    if y not in body_rows:
+# Red/orange tinting across head
+for y in range(8, 24):
+    if y not in head:
         continue
-    x1, x2 = body_rows[y]
-    # Scattered red/orange pixels
+    x1, x2 = head[y]
     for x in range(x1 + 2, x2 - 1):
-        if (x + y * 7) % 5 == 0:
-            pixel(x, y, RED_STREAK)
-        elif (x + y * 11) % 7 == 0:
-            pixel(x, y, ORANGE_STREAK)
-        elif (x + y * 13) % 11 == 0:
-            pixel(x, y, RED_DARK)
+        if (x * 7 + y * 13) % 9 == 0:
+            px(x, y, RED_TINT)
+        elif (x * 11 + y * 7) % 11 == 0:
+            px(x, y, ORANGE_TINT)
 
-# === GREEN ACCENT LINES ===
-green_pixels = [
-    (22, 15), (23, 15), (24, 16), (25, 17),
-    (38, 15), (39, 15), (40, 16), (41, 17),
-    (20, 22), (21, 22), (42, 22), (43, 22),
-]
-draw_pixels(green_pixels, GREEN_ACC)
+# Green accent highlights
+for coord in [(20, 10), (21, 10), (42, 10), (43, 10), (18, 17), (45, 17)]:
+    px(coord[0], coord[1], GREEN_ACC)
+
+# Outline head
+outline_rows(head)
 
 # === DARK SLASH MARKINGS on top of head ===
-# Angular dark marks like in the drawing - 3-4 slash marks
+slashes = [
+    # Slash 1
+    [(24, 5), (25, 5), (25, 6), (26, 6), (27, 7), (26, 8), (25, 9)],
+    # Slash 2
+    [(29, 5), (30, 5), (30, 6), (31, 6), (32, 7), (31, 8), (30, 9)],
+    # Slash 3
+    [(34, 5), (35, 5), (35, 6), (36, 6), (37, 7), (36, 8), (35, 9)],
+    # Slash 4
+    [(39, 6), (40, 6), (40, 7), (39, 8)],
+]
+for slash in slashes:
+    for (x, y) in slash:
+        px(x, y, SLASH_DARK)
 
-# Slash 1 (leftish)
-slash1 = [
-    (24, 9), (25, 9),
-    (25, 10), (26, 10),
-    (26, 11), (27, 11),
-    (25, 12), (26, 12),
-    (24, 13), (25, 13),
-]
-draw_pixels(slash1, SLASH_DARK)
+# === EYES - menacing yellow with red pupils ===
+# Left eye
+for (x, y) in [(23, 17), (24, 17), (25, 17), (23, 18), (24, 18), (25, 18), (24, 19)]:
+    px(x, y, EYE_GLOW)
+for (x, y) in [(24, 17), (24, 18)]:
+    px(x, y, EYE_PUPIL)
 
-# Slash 2
-slash2 = [
-    (29, 9), (30, 9),
-    (30, 10), (31, 10),
-    (31, 11), (32, 11),
-    (30, 12), (31, 12),
-    (29, 13), (30, 13),
-]
-draw_pixels(slash2, SLASH_DARK)
+# Right eye
+for (x, y) in [(38, 17), (39, 17), (40, 17), (38, 18), (39, 18), (40, 18), (39, 19)]:
+    px(x, y, EYE_GLOW)
+for (x, y) in [(39, 17), (39, 18)]:
+    px(x, y, EYE_PUPIL)
 
-# Slash 3
-slash3 = [
-    (34, 9), (35, 9),
-    (35, 10), (36, 10),
-    (36, 11), (37, 11),
-    (35, 12), (36, 12),
-    (34, 13), (35, 13),
-]
-draw_pixels(slash3, SLASH_DARK)
+# === TENTACLES - 5 dangling from below the head ===
 
-# Slash 4
-slash4 = [
-    (38, 10), (39, 10),
-    (39, 11), (40, 11),
-    (38, 12), (39, 12),
-]
-draw_pixels(slash4, SLASH_MID)
+def draw_tentacle(points, suckers):
+    """Draw a tentacle from a list of (x,y) points with suckers at certain indices."""
+    for i, (x, y) in enumerate(points):
+        px(x, y, PURPLE_DARK)
+        px(x + 1, y, PURPLE_DARK)
+        # Fill interior
+        px(x, y, PURPLE_DARK)
+        if i > 0:
+            px(x + 1, y, PURPLE_TENT)
+    # Lighter highlights
+    for i in range(1, len(points), 3):
+        x, y = points[i]
+        px(x + 1, y, PURPLE_LIGHT)
+    # Suction cups
+    for idx in suckers:
+        if idx < len(points):
+            x, y = points[idx]
+            px(x + 1, y, SUCKER)
 
-# === TENTACLES hanging down ===
-# 4 purple tentacles with suction cups hanging from the body
+# Tentacle 1 (far left) - curls left
+t1 = [(19, 27), (18, 28), (17, 29), (16, 30), (15, 31), (14, 32),
+      (13, 33), (12, 34), (11, 35), (10, 36), (10, 37), (9, 38),
+      (9, 39), (9, 40), (10, 41), (10, 42), (11, 43), (12, 44),
+      (13, 45), (14, 46)]
+for i, (x, y) in enumerate(t1):
+    px(x, y, PURPLE_DARK)
+    px(x + 1, y, PURPLE_TENT)
+    if i % 3 == 1:
+        px(x + 1, y, PURPLE_LIGHT)
+for idx in [2, 5, 8, 11, 14, 17]:
+    if idx < len(t1):
+        px(t1[idx][0] + 1, t1[idx][1], SUCKER)
 
-# Tentacle 1 (far left)
-t1_outline = [
-    (12, 28), (13, 28),
-    (11, 29), (12, 29),
-    (10, 30), (11, 30),
-    (9, 31), (10, 31),
-    (9, 32), (10, 32),
-    (9, 33), (10, 33),
-    (10, 34), (11, 34),
-    (10, 35), (11, 35),
-    (11, 36), (12, 36),
-    (11, 37), (12, 37),
-    (12, 38), (13, 38),
-    (12, 39), (13, 39),
-    (13, 40), (14, 40),
-    (13, 41), (14, 41),
-    (14, 42), (15, 42),
-    (15, 43),
-]
-draw_pixels(t1_outline, PURPLE_DARK)
-t1_fill = [
-    (11, 31), (11, 32), (11, 33), (11, 34),
-    (12, 35), (12, 36), (12, 37), (13, 38),
-    (13, 39), (14, 40), (14, 41),
-]
-draw_pixels(t1_fill, PURPLE_TENT)
-t1_suckers = [(11, 32), (12, 35), (12, 37), (13, 39), (14, 41)]
-draw_pixels(t1_suckers, SUCKER)
+# Tentacle 2 (inner left)
+t2 = [(23, 27), (22, 28), (22, 29), (21, 30), (21, 31), (21, 32),
+      (21, 33), (22, 34), (22, 35), (23, 36), (23, 37), (24, 38),
+      (25, 39), (26, 40), (27, 41), (28, 42), (29, 43)]
+for i, (x, y) in enumerate(t2):
+    px(x, y, PURPLE_DARK)
+    px(x + 1, y, PURPLE_TENT)
+    if i % 3 == 0:
+        px(x + 1, y, PURPLE_LIGHT)
+for idx in [1, 4, 7, 10, 13, 16]:
+    if idx < len(t2):
+        px(t2[idx][0] + 1, t2[idx][1], SUCKER)
 
-# Tentacle 2 (center-left)
-t2_outline = [
-    (22, 29), (23, 29),
-    (21, 30), (22, 30),
-    (21, 31), (22, 31),
-    (20, 32), (21, 32),
-    (20, 33), (21, 33),
-    (20, 34), (21, 34),
-    (21, 35), (22, 35),
-    (21, 36), (22, 36),
-    (22, 37), (23, 37),
-    (22, 38), (23, 38),
-    (23, 39), (24, 39),
-    (24, 40), (25, 40),
-    (25, 41), (26, 41),
-    (26, 42), (27, 42),
-    (27, 43), (28, 43),
-    (28, 44),
-]
-draw_pixels(t2_outline, PURPLE_DARK)
-t2_fill = [
-    (22, 31), (21, 32), (21, 33), (21, 34),
-    (22, 35), (22, 36), (23, 37), (23, 38),
-    (24, 39), (25, 40), (26, 41), (27, 42),
-]
-draw_pixels(t2_fill, PURPLE_TENT)
-t2_suckers = [(22, 32), (21, 34), (22, 36), (23, 38), (25, 40), (27, 42)]
-draw_pixels(t2_suckers, SUCKER)
+# Tentacle 3 (center) - hangs straight down
+t3 = [(31, 27), (31, 28), (31, 29), (30, 30), (30, 31), (30, 32),
+      (31, 33), (31, 34), (32, 35), (32, 36), (32, 37), (32, 38),
+      (31, 39), (31, 40), (31, 41), (32, 42), (32, 43), (33, 44),
+      (33, 45), (33, 46), (34, 47)]
+for i, (x, y) in enumerate(t3):
+    px(x, y, PURPLE_DARK)
+    px(x + 1, y, PURPLE_TENT)
+    if i % 3 == 2:
+        px(x + 1, y, PURPLE_LIGHT)
+for idx in [2, 5, 8, 11, 14, 17, 20]:
+    if idx < len(t3):
+        px(t3[idx][0] + 1, t3[idx][1], SUCKER)
 
-# Tentacle 3 (center-right)
-t3_outline = [
-    (34, 29), (35, 29),
-    (34, 30), (35, 30),
-    (35, 31), (36, 31),
-    (35, 32), (36, 32),
-    (36, 33), (37, 33),
-    (36, 34), (37, 34),
-    (36, 35), (37, 35),
-    (37, 36), (38, 36),
-    (37, 37), (38, 37),
-    (37, 38), (38, 38),
-    (38, 39), (39, 39),
-    (38, 40), (39, 40),
-    (39, 41), (40, 41),
-    (39, 42),
-]
-draw_pixels(t3_outline, PURPLE_DARK)
-t3_fill = [
-    (35, 31), (36, 32), (36, 33), (37, 34),
-    (37, 35), (37, 36), (38, 37), (38, 38),
-    (38, 39), (39, 40), (39, 41),
-]
-draw_pixels(t3_fill, PURPLE_TENT)
-t3_suckers = [(36, 32), (37, 34), (37, 36), (38, 38), (39, 40)]
-draw_pixels(t3_suckers, SUCKER)
+# Tentacle 4 (inner right)
+t4 = [(38, 27), (39, 28), (39, 29), (40, 30), (40, 31), (40, 32),
+      (40, 33), (39, 34), (39, 35), (38, 36), (38, 37), (37, 38),
+      (36, 39), (35, 40), (35, 41), (34, 42)]
+for i, (x, y) in enumerate(t4):
+    px(x, y, PURPLE_DARK)
+    px(x + 1, y, PURPLE_TENT)
+    if i % 3 == 1:
+        px(x + 1, y, PURPLE_LIGHT)
+for idx in [1, 4, 7, 10, 13]:
+    if idx < len(t4):
+        px(t4[idx][0] + 1, t4[idx][1], SUCKER)
 
-# Tentacle 4 (far right)
-t4_outline = [
-    (46, 28), (47, 28),
-    (47, 29), (48, 29),
-    (48, 30), (49, 30),
-    (49, 31), (50, 31),
-    (49, 32), (50, 32),
-    (50, 33), (51, 33),
-    (50, 34), (51, 34),
-    (50, 35), (51, 35),
-    (50, 36), (51, 36),
-    (49, 37), (50, 37),
-    (49, 38), (50, 38),
-    (48, 39), (49, 39),
-    (48, 40), (49, 40),
-    (47, 41), (48, 41),
-    (47, 42),
-]
-draw_pixels(t4_outline, PURPLE_DARK)
-t4_fill = [
-    (49, 31), (50, 32), (50, 33), (51, 34),
-    (51, 35), (51, 36), (50, 37), (50, 38),
-    (49, 39), (49, 40), (48, 41),
-]
-draw_pixels(t4_fill, PURPLE_TENT)
-t4_suckers = [(50, 32), (51, 34), (51, 36), (50, 38), (49, 40)]
-draw_pixels(t4_suckers, SUCKER)
-
-# === Add some lighter purple highlights to tentacles ===
-highlights = [
-    (10, 31), (12, 36), (14, 40),
-    (22, 31), (22, 35), (24, 39), (26, 41),
-    (36, 31), (36, 34), (38, 37), (39, 41),
-    (48, 30), (50, 34), (50, 37), (48, 40),
-]
-draw_pixels(highlights, PURPLE_LIGHT)
+# Tentacle 5 (far right) - curls right
+t5 = [(43, 27), (44, 28), (45, 29), (46, 30), (47, 31), (48, 32),
+      (49, 33), (50, 34), (51, 35), (52, 36), (52, 37), (53, 38),
+      (53, 39), (53, 40), (52, 41), (52, 42), (51, 43), (50, 44),
+      (49, 45), (48, 46)]
+for i, (x, y) in enumerate(t5):
+    px(x, y, PURPLE_DARK)
+    px(x - 1, y, PURPLE_TENT)  # mirrored
+    if i % 3 == 1:
+        px(x - 1, y, PURPLE_LIGHT)
+for idx in [2, 5, 8, 11, 14, 17]:
+    if idx < len(t5):
+        px(t5[idx][0] - 1, t5[idx][1], SUCKER)
 
 img.save('/home/user/game1/assets/sprites/combatMech.png')
 print("Saved combatMech.png (64x64)")
