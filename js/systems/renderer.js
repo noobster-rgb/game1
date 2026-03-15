@@ -11,6 +11,7 @@ let portraitCanvas;
 const portraitImages = {};
 const PORTRAIT_PATHS = {
   cannonMech: 'assets/portraits/cannonMech_sprite.png',
+  combatMech: 'assets/portraits/combatMech_sprite.png',
 };
 
 function loadPortraits() {
