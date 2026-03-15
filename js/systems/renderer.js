@@ -1,5 +1,6 @@
 import { TILE_SIZE, TERRAIN_COLORS, COLORS, TEAM, TERRAIN, PHASE } from '../constants.js';
 import { getUnitAt } from '../state.js';
+import { getSpriteFrame } from './sprites.js';
 
 let ctx;
 let canvas;
@@ -158,9 +159,26 @@ function drawUnits(state) {
 
 function drawUnit(state, unit, px, py) {
   const isPlayer = unit.team === TEAM.PLAYER;
-  const s = unit.sprite || { body: '#888', accent: '#666', symbol: '?' };
 
-  // Mech body - pixel art style
+  // Try sprite-based rendering first
+  const frame = getSpriteFrame(unit, state);
+  if (frame) {
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.fillRect(px + TILE_SIZE * 0.2, py + TILE_SIZE * 0.75, TILE_SIZE * 0.6, TILE_SIZE * 0.1);
+    // Draw sprite frame
+    ctx.drawImage(
+      frame.image,
+      frame.sx, frame.sy, frame.sw, frame.sh,
+      px, py, TILE_SIZE, TILE_SIZE
+    );
+    drawHpBar(unit, px, py, isPlayer);
+    drawMovedOverlay(state, unit, px, py, isPlayer);
+    return;
+  }
+
+  // Procedural fallback
+  const s = unit.sprite || { body: '#888', accent: '#666', symbol: '?' };
   const cx = px + TILE_SIZE / 2;
   const cy = py + TILE_SIZE / 2;
   const size = TILE_SIZE * 0.35;
@@ -172,28 +190,21 @@ function drawUnit(state, unit, px, py) {
   // Body
   ctx.fillStyle = s.body;
   if (isPlayer) {
-    // Mech shape - squared
     ctx.fillRect(cx - size, cy - size * 1.1, size * 2, size * 2);
-    // Shoulders
     ctx.fillStyle = s.accent;
     ctx.fillRect(cx - size * 1.2, cy - size * 0.8, size * 0.4, size * 1.2);
     ctx.fillRect(cx + size * 0.8, cy - size * 0.8, size * 0.4, size * 1.2);
-    // Head
     ctx.fillStyle = s.body;
     ctx.fillRect(cx - size * 0.5, cy - size * 1.5, size, size * 0.5);
-    // Visor
     ctx.fillStyle = '#aaddff';
     ctx.fillRect(cx - size * 0.35, cy - size * 1.35, size * 0.7, size * 0.2);
   } else {
-    // Bug/creature shape - rounded
     ctx.beginPath();
     ctx.ellipse(cx, cy, size * 1.0, size * 0.8, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Eyes
     ctx.fillStyle = '#ff4444';
     ctx.fillRect(cx - size * 0.5, cy - size * 0.4, size * 0.25, size * 0.25);
     ctx.fillRect(cx + size * 0.25, cy - size * 0.4, size * 0.25, size * 0.25);
-    // Accent marks
     ctx.fillStyle = s.accent;
     ctx.fillRect(cx - size * 0.2, cy + size * 0.1, size * 0.4, size * 0.15);
   }
@@ -205,7 +216,11 @@ function drawUnit(state, unit, px, py) {
   ctx.textBaseline = 'middle';
   ctx.fillText(s.symbol, cx, cy + 1);
 
-  // HP bar
+  drawHpBar(unit, px, py, isPlayer);
+  drawMovedOverlay(state, unit, px, py, isPlayer);
+}
+
+function drawHpBar(unit, px, py, isPlayer) {
   const barWidth = TILE_SIZE * 0.7;
   const barHeight = 5;
   const barX = px + (TILE_SIZE - barWidth) / 2;
@@ -215,8 +230,9 @@ function drawUnit(state, unit, px, py) {
   const hpPercent = unit.hp / unit.maxHp;
   ctx.fillStyle = isPlayer ? COLORS.HP_BAR_PLAYER : COLORS.HP_BAR_ENEMY;
   ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
+}
 
-  // Moved/acted overlay
+function drawMovedOverlay(state, unit, px, py, isPlayer) {
   if (isPlayer && unit.moved && unit.acted && state.phase === PHASE.PLAYER_PHASE) {
     ctx.fillStyle = COLORS.MOVED_OVERLAY;
     ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);

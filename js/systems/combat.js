@@ -73,6 +73,7 @@ function getLineDirection(fromX, fromY, toX, toY) {
 
 export function applyDamage(state, unit, damage) {
   unit.hp = Math.max(0, unit.hp - damage);
+  unit.hurtUntil = performance.now() + 200; // Signal sprite system to show hurt frame
   emit('unitDamaged', { unitId: unit.id, damage, hp: unit.hp });
   if (unit.hp <= 0) {
     emit('unitKilled', { unitId: unit.id, unit });
