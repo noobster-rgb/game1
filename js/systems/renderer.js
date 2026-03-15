@@ -10,7 +10,7 @@ let portraitCanvas;
 // Portrait images keyed by unit type
 const portraitImages = {};
 const PORTRAIT_PATHS = {
-  cannonMech: 'assets/portraits/cannonMech.jfif',
+  cannonMech: 'assets/portraits/cannonMech_sprite.png',
 };
 
 function loadPortraits() {
