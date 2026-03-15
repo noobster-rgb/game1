@@ -10,8 +10,8 @@ let portraitCanvas;
 // Portrait images keyed by unit type
 const portraitImages = {};
 const PORTRAIT_PATHS = {
-  cannonMech: 'assets/portraits/cannonMech_sprite.png',
-  combatMech: 'assets/portraits/combatMech_sprite.png',
+  cannonMech: 'assets/portraits/cannonMech_portrait.png',
+  combatMech: 'assets/portraits/combatMech_portrait.png',
 };
 
 function loadPortraits() {
