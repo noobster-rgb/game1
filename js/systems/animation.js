@@ -1,4 +1,4 @@
-import { ANIM_MOVE_DURATION, ANIM_ATTACK_DURATION, ANIM_PUSH_DURATION } from '../constants.js';
+import { ANIM_MOVE_DURATION, ANIM_ATTACK_DURATION, ANIM_PUSH_DURATION, TILE_SIZE } from '../constants.js';
 
 export function createMoveAnimation(unit, fromX, fromY, toX, toY, onComplete) {
   return {
@@ -40,6 +40,64 @@ export function createPushAnimation(unit, fromX, fromY, toX, toY, onComplete) {
   };
 }
 
+// --- VFX animations (visual only, no unitId) ---
+
+export function createImpactVFX(targetX, targetY, color = '#ffcc44') {
+  return {
+    type: 'vfx_impact',
+    x: targetX,
+    y: targetY,
+    color,
+    startTime: performance.now(),
+    duration: 350,
+  };
+}
+
+export function createProjectileVFX(fromX, fromY, toX, toY, color = '#ff8844', onArrive) {
+  return {
+    type: 'vfx_projectile',
+    fromX, fromY, toX, toY,
+    currentX: fromX, currentY: fromY,
+    color,
+    startTime: performance.now(),
+    duration: 300,
+    onComplete: onArrive,
+  };
+}
+
+export function createBeamVFX(fromX, fromY, toX, toY, color = '#44ccff') {
+  return {
+    type: 'vfx_beam',
+    fromX, fromY, toX, toY,
+    color,
+    startTime: performance.now(),
+    duration: 400,
+  };
+}
+
+export function createExplosionVFX(centerX, centerY, radius = 1, color = '#ff6622') {
+  return {
+    type: 'vfx_explosion',
+    x: centerX,
+    y: centerY,
+    radius,
+    color,
+    startTime: performance.now(),
+    duration: 500,
+  };
+}
+
+export function createSlashVFX(targetX, targetY, color = '#ffffff') {
+  return {
+    type: 'vfx_slash',
+    x: targetX,
+    y: targetY,
+    color,
+    startTime: performance.now(),
+    duration: 300,
+  };
+}
+
 export function updateAnimations(state) {
   const now = performance.now();
   const completed = [];
@@ -47,6 +105,20 @@ export function updateAnimations(state) {
   for (const anim of state.animations) {
     const elapsed = now - anim.startTime;
     let t = Math.min(elapsed / anim.duration, 1);
+
+    // VFX animations just track progress
+    if (anim.type.startsWith('vfx_')) {
+      anim.progress = t;
+      if (anim.type === 'vfx_projectile') {
+        const eased = 1 - (1 - t) * (1 - t);
+        anim.currentX = anim.fromX + (anim.toX - anim.fromX) * eased;
+        anim.currentY = anim.fromY + (anim.toY - anim.fromY) * eased;
+      }
+      if (elapsed >= anim.duration) {
+        completed.push(anim);
+      }
+      continue;
+    }
 
     // Ease out
     t = 1 - (1 - t) * (1 - t);
