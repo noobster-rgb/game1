@@ -1,6 +1,5 @@
 import { PHASE, TEAM } from '../constants.js';
 import { getAliveUnits } from '../state.js';
-import { getAttackRange } from '../utils/grid.js';
 import { getObjectiveStatus } from './objectives.js';
 import { emit } from '../utils/events.js';
 
@@ -23,6 +22,18 @@ export function initUI() {
 
   elements.endTurnBtn.addEventListener('click', () => emit('endTurn'));
   elements.restartBtn.addEventListener('click', () => emit('restart'));
+
+  // Use event delegation for ability buttons so clicks work even when
+  // innerHTML is rebuilt every frame by the game loop
+  elements.abilityPanel.addEventListener('click', (e) => {
+    const btn = e.target.closest('.ability-btn');
+    if (!btn) return;
+    const abilityId = btn.dataset.ability;
+    const unitId = btn.dataset.unitId;
+    if (abilityId && unitId) {
+      emit('abilityClick', { abilityId, unitId });
+    }
+  });
 }
 
 export function updateUI(state) {
@@ -120,7 +131,7 @@ function updateAbilityPanel(state) {
   let html = '';
   for (const ability of unit.abilities) {
     const isSelected = state.selectedAbility && state.selectedAbility.id === ability.id;
-    html += `<button class="ability-btn ${isSelected ? 'selected' : ''}" data-ability="${ability.id}">
+    html += `<button class="ability-btn ${isSelected ? 'selected' : ''}" data-ability="${ability.id}" data-unit-id="${unit.id}">
       <span class="ability-icon">${ability.icon || '⚔'}</span>
       <span class="ability-name">${ability.name}</span>
       <span class="ability-desc">${ability.description}</span>
@@ -128,17 +139,6 @@ function updateAbilityPanel(state) {
   }
 
   elements.abilityPanel.innerHTML = html;
-
-  // Add click handlers
-  elements.abilityPanel.querySelectorAll('.ability-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const abilityId = btn.dataset.ability;
-      const ability = unit.abilities.find(a => a.id === abilityId);
-      if (ability) {
-        emit('selectAbility', { ability, unit });
-      }
-    });
-  });
 }
 
 export function showMissionSelect(missions, onSelect) {

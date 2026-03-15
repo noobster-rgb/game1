@@ -49,8 +49,13 @@ function init() {
     moveUnit(state, unitId, targetX, targetY);
   });
 
-  on('selectAbility', ({ ability, unit }) => {
+  on('abilityClick', ({ abilityId, unitId }) => {
     if (!state || state.phase !== PHASE.PLAYER_PHASE) return;
+    const unit = state.units.find(u => u.id === unitId);
+    if (!unit) return;
+    const ability = unit.abilities.find(a => a.id === abilityId);
+    if (!ability) return;
+
     if (state.selectedAbility && state.selectedAbility.id === ability.id) {
       // Deselect ability
       state.selectedAbility = null;
