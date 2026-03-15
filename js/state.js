@@ -1,8 +1,23 @@
 import { PHASE } from './constants.js';
 
 let nextId = 1;
+let abilityResolver = null;
+
 export function generateId() {
   return nextId++;
+}
+
+/**
+ * Set the function used to resolve ability string IDs to objects.
+ * Called by initRegistry() after ABILITIES is loaded.
+ */
+export function setAbilityResolver(fn) {
+  abilityResolver = fn;
+}
+
+function resolveAbilities(abilities) {
+  if (!abilityResolver) return abilities;
+  return abilities.map(a => typeof a === 'string' ? abilityResolver(a) : a);
 }
 
 export function createState(mission) {
@@ -21,6 +36,7 @@ export function createState(mission) {
       hp: u.maxHp,
       moved: false,
       acted: false,
+      abilities: resolveAbilities(u.abilities),
     })),
 
     selectedUnitId: null,

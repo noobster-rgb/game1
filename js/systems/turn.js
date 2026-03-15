@@ -1,8 +1,8 @@
 import { PHASE, TEAM } from '../constants.js';
-import { getAliveUnits } from '../state.js';
-import { generateId } from '../state.js';
+import { getAliveUnits, generateId } from '../state.js';
 import { runEnemyPhase } from './enemy-ai.js';
 import { emit } from '../utils/events.js';
+import { ABILITIES } from '../data/abilities.js';
 
 export function endPlayerTurn(state) {
   if (state.phase !== PHASE.PLAYER_PHASE) return;
@@ -64,6 +64,7 @@ function endEnemyTurn(state) {
           hp: spawnDef.maxHp,
           moved: false,
           acted: false,
+          abilities: spawnDef.abilities.map(a => typeof a === 'string' ? ABILITIES[a] : a),
         };
         state.units.push(unit);
       }

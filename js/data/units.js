@@ -1,5 +1,4 @@
 import { TEAM } from '../constants.js';
-import { ABILITIES } from './abilities.js';
 
 export const UNIT_TYPES = {
   // Player mechs
@@ -9,8 +8,14 @@ export const UNIT_TYPES = {
     team: TEAM.PLAYER,
     maxHp: 3,
     moveRange: 3,
-    abilities: [ABILITIES.titanFist],
+    abilities: ['titanFist'],
     sprite: { body: '#4488cc', accent: '#2266aa', symbol: 'C' },
+    spriteSheet: {
+      src: 'assets/sprites/combatMech.png',
+      frameWidth: 64, frameHeight: 64,
+      idle: [0, 1, 2, 3], attack: null, hurt: null, idleSpeed: 250,
+    },
+    portrait: 'assets/portraits/combatMech_portrait.png',
   },
   artilleryMech: {
     type: 'artilleryMech',
@@ -18,7 +23,7 @@ export const UNIT_TYPES = {
     team: TEAM.PLAYER,
     maxHp: 2,
     moveRange: 3,
-    abilities: [ABILITIES.artemisArtillery],
+    abilities: ['artemisArtillery'],
     sprite: { body: '#cc8844', accent: '#aa6622', symbol: 'A' },
   },
   cannonMech: {
@@ -27,8 +32,14 @@ export const UNIT_TYPES = {
     team: TEAM.PLAYER,
     maxHp: 3,
     moveRange: 3,
-    abilities: [ABILITIES.taurusCannon],
+    abilities: ['taurusCannon'],
     sprite: { body: '#88cc44', accent: '#66aa22', symbol: 'T' },
+    spriteSheet: {
+      src: 'assets/sprites/cannonMech.png',
+      frameWidth: 64, frameHeight: 64,
+      idle: [0, 1, 2, 3], attack: null, hurt: null, idleSpeed: 250,
+    },
+    portrait: 'assets/portraits/cannonMech_portrait.png',
   },
 
   // Enemies
@@ -38,7 +49,7 @@ export const UNIT_TYPES = {
     team: TEAM.ENEMY,
     maxHp: 1,
     moveRange: 4,
-    abilities: [ABILITIES.hornetSting],
+    abilities: ['hornetSting'],
     sprite: { body: '#cc4444', accent: '#aa2222', symbol: 'H' },
     aiPriority: 'nearest',
   },
@@ -48,7 +59,7 @@ export const UNIT_TYPES = {
     team: TEAM.ENEMY,
     maxHp: 3,
     moveRange: 2,
-    abilities: [ABILITIES.scarabCrush],
+    abilities: ['scarabCrush'],
     sprite: { body: '#884488', accent: '#662266', symbol: 'S' },
     aiPriority: 'buildings',
   },
@@ -58,7 +69,7 @@ export const UNIT_TYPES = {
     team: TEAM.ENEMY,
     maxHp: 1,
     moveRange: 3,
-    abilities: [ABILITIES.fireflyBeam],
+    abilities: ['fireflyBeam'],
     sprite: { body: '#cc8800', accent: '#aa6600', symbol: 'F' },
     aiPriority: 'ranged',
   },
@@ -68,7 +79,7 @@ export const UNIT_TYPES = {
     team: TEAM.ENEMY,
     maxHp: 5,
     moveRange: 2,
-    abilities: [ABILITIES.beetleSmash],
+    abilities: ['beetleSmash'],
     sprite: { body: '#664444', accent: '#442222', symbol: 'B' },
     aiPriority: 'buildings',
   },

@@ -12,6 +12,9 @@ import { getAttackRange } from './utils/grid.js';
 import { on, emit } from './utils/events.js';
 import { MISSIONS } from './data/missions.js';
 import { loadSprites } from './systems/sprites.js';
+import './data/target-types/index.js'; // Register target type plugins
+import { initRegistry } from './data/registry.js';
+import { toggleEditor } from './editor/editor.js';
 
 let state = null;
 
@@ -20,6 +23,7 @@ function init() {
   canvas.width = CANVAS_WIDTH;
   canvas.height = CANVAS_HEIGHT;
 
+  initRegistry(); // Resolve ability IDs, auto-register sprites/portraits, validate
   initRenderer(canvas);
   initUI();
   loadSprites(); // Fire-and-forget: game starts with procedural fallback, switches to sprites once loaded
@@ -137,6 +141,11 @@ function init() {
   on('gameOver', () => {
     if (!state) return;
     updateUI(state);
+  });
+
+  // F2 toggles the dev editor
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'F2') { e.preventDefault(); toggleEditor(); }
   });
 
   // Start with mission select

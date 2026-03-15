@@ -7,120 +7,93 @@ import {
   createExplosionVFX, createSlashVFX,
 } from './animation.js';
 import { emit } from '../utils/events.js';
-import {
-  playMeleeSound, playCannonSound, playArtillerySound,
-  playExplosionSound, playHitSound, playPushSound, playDeathSound,
-} from './audio.js';
+import { playSoundByKey, playHitSound, playPushSound, playDeathSound } from './audio.js';
+import { getTargetType } from './targeting.js';
+
+// VFX factory lookup — maps vfx type string to a function that
+// creates the visual effect and calls onDone when effects should be applied
+const VFX_FACTORIES = {
+  slash(state, attacker, targetX, targetY, color, onDone) {
+    state.animations.push(createSlashVFX(targetX, targetY, color));
+    state.animations.push(createImpactVFX(targetX, targetY, color));
+    onDone();
+  },
+  beam(state, attacker, targetX, targetY, color, onDone) {
+    const beam = createBeamVFX(attacker.x, attacker.y, targetX, targetY, color);
+    beam.onComplete = () => {
+      state.animations.push(createImpactVFX(targetX, targetY, color));
+      onDone();
+    };
+    state.animations.push(beam);
+  },
+  projectile(state, attacker, targetX, targetY, color, onDone) {
+    const proj = createProjectileVFX(attacker.x, attacker.y, targetX, targetY, color, () => {
+      playSoundByKey('explosion');
+      state.animations.push(createExplosionVFX(targetX, targetY, 1, color));
+      onDone();
+    });
+    state.animations.push(proj);
+  },
+  explosion(state, attacker, targetX, targetY, color, onDone) {
+    state.animations.push(createExplosionVFX(targetX, targetY, 1, color));
+    onDone();
+  },
+};
 
 export function executeAttack(state, attackerId, ability, targetX, targetY) {
   const attacker = state.units.find(u => u.id === attackerId);
   if (!attacker) return;
 
-  if (ability.aoe) {
-    // Ranged AoE: lob a projectile, then explode on arrival
-    const anim = createAttackAnimation(attacker, targetX, targetY, () => {
-      playArtillerySound();
-      const proj = createProjectileVFX(attacker.x, attacker.y, targetX, targetY, '#ff8844', () => {
-        // Explosion on impact
-        playExplosionSound();
-        state.animations.push(createExplosionVFX(targetX, targetY, 1, '#ff6622'));
-        applyAttackEffects(state, attacker, ability, targetX, targetY);
-        attacker.acted = true;
-        state.selectedAbility = null;
-        state.attackTargetTiles = [];
-        emit('actionComplete');
-      });
-      state.animations.push(proj);
-    });
-    state.animations.push(anim);
-  } else if (ability.targetType === 'line') {
-    // Line attack: fire a beam along the line
-    const anim = createAttackAnimation(attacker, targetX, targetY, () => {
-      playCannonSound();
-      const color = ability.push ? '#44ccff' : '#ff4444';
-      const beam = createBeamVFX(attacker.x, attacker.y, targetX, targetY, color);
-      beam.onComplete = () => {
-        state.animations.push(createImpactVFX(targetX, targetY, color));
-        applyAttackEffects(state, attacker, ability, targetX, targetY);
-        attacker.acted = true;
-        state.selectedAbility = null;
-        state.attackTargetTiles = [];
-        emit('actionComplete');
-      };
-      state.animations.push(beam);
-    });
-    state.animations.push(anim);
-  } else {
-    // Melee attack: slash effect at target
-    const anim = createAttackAnimation(attacker, targetX, targetY, () => {
-      playMeleeSound();
-      const color = ability.damage >= 3 ? '#ff4444' : ability.damage >= 2 ? '#ffcc44' : '#ffffff';
-      state.animations.push(createSlashVFX(targetX, targetY, color));
-      state.animations.push(createImpactVFX(targetX, targetY, color));
+  const tt = getTargetType(ability.targetType);
+  if (!tt) return;
+
+  // Resolve VFX config: ability-level override > target type default
+  const vfxType = ability.vfx?.type || tt.vfx.type;
+  const vfxColor = ability.vfx?.color || tt.vfx.colorFn(ability);
+  const soundKey = ability.sound || tt.vfx.soundKey;
+
+  const anim = createAttackAnimation(attacker, targetX, targetY, () => {
+    playSoundByKey(soundKey);
+
+    const vfxFactory = VFX_FACTORIES[vfxType] || VFX_FACTORIES.slash;
+    vfxFactory(state, attacker, targetX, targetY, vfxColor, () => {
       applyAttackEffects(state, attacker, ability, targetX, targetY);
       attacker.acted = true;
       state.selectedAbility = null;
       state.attackTargetTiles = [];
       emit('actionComplete');
     });
-    state.animations.push(anim);
-  }
+  });
+  state.animations.push(anim);
 }
 
 function applyAttackEffects(state, attacker, ability, targetX, targetY) {
-  if (ability.aoe) {
-    // AoE: damage target tile + push all adjacent units
-    applyDamageAt(state, targetX, targetY, ability.damage);
+  const tt = getTargetType(ability.targetType);
+  if (!tt) return;
 
-    // Push units adjacent to the blast center
-    for (const dir of DIRS) {
-      const adjX = targetX + dir.x;
-      const adjY = targetY + dir.y;
-      const adjUnit = getUnitAt(state, adjX, adjY);
-      if (adjUnit && adjUnit.id !== attacker.id) {
-        applyPush(state, adjUnit, dir.x, dir.y);
-      }
+  const effects = tt.getAffectedTiles(attacker, ability, targetX, targetY, state);
+
+  for (const effect of effects) {
+    const { x, y, damage, pushDir, pushOnly } = effect;
+
+    // Apply damage (skip for push-only effects like AoE adjacent pushes)
+    if (!pushOnly && damage > 0) {
+      applyDamageAt(state, x, y, damage);
     }
-  } else if (ability.targetType === 'line') {
-    // Line attack: hit first unit in line
-    const dir = getLineDirection(attacker.x, attacker.y, targetX, targetY);
-    // Find the unit at target position
-    const target = getUnitAt(state, targetX, targetY);
-    if (target) {
-      applyDamage(state, target, ability.damage);
-      if (ability.push) {
-        applyPush(state, target, dir.x, dir.y);
+
+    // Apply push if direction specified
+    if (pushDir) {
+      const unit = getUnitAt(state, x, y);
+      if (unit && unit.id !== attacker.id) {
+        applyPush(state, unit, pushDir.x, pushDir.y);
       }
-    } else {
-      // Check if it's a building
-      applyDamageAt(state, targetX, targetY, ability.damage);
-    }
-  } else {
-    // Standard attack on target tile
-    const target = getUnitAt(state, targetX, targetY);
-    if (target) {
-      applyDamage(state, target, ability.damage);
-      if (ability.push) {
-        const pushDir = getPushDirection(attacker.x, attacker.y, targetX, targetY);
-        applyPush(state, target, pushDir.x, pushDir.y);
-      }
-    } else {
-      // Hit building at this tile
-      applyDamageAt(state, targetX, targetY, ability.damage);
     }
   }
-}
-
-function getLineDirection(fromX, fromY, toX, toY) {
-  const dx = toX - fromX;
-  const dy = toY - fromY;
-  if (dx !== 0) return { x: dx > 0 ? 1 : -1, y: 0 };
-  return { x: 0, y: dy > 0 ? 1 : -1 };
 }
 
 export function applyDamage(state, unit, damage) {
   unit.hp = Math.max(0, unit.hp - damage);
-  unit.hurtUntil = performance.now() + 200; // Signal sprite system to show hurt frame
+  unit.hurtUntil = performance.now() + 200;
   playHitSound();
   emit('unitDamaged', { unitId: unit.id, damage, hp: unit.hp });
   if (unit.hp <= 0) {
@@ -136,11 +109,9 @@ function applyDamageAt(state, x, y, damage) {
     return;
   }
 
-  // Damage building
   const tile = getTile(state, x, y);
   if (tile === TERRAIN.BUILDING) {
     state.gridPower = Math.max(0, state.gridPower - 1);
-    // Destroy building tile
     state.grid.tiles[y][x] = TERRAIN.GROUND;
     emit('buildingDestroyed', { x, y, gridPower: state.gridPower });
   }
@@ -153,16 +124,14 @@ export function applyPush(state, unit, dx, dy) {
   const newX = unit.x + dx;
   const newY = unit.y + dy;
 
-  // Out of bounds = bump
   if (!inBounds(newX, newY)) {
-    applyDamage(state, unit, 1); // bump damage
+    applyDamage(state, unit, 1);
     state.animations.push(createImpactVFX(unit.x, unit.y, '#ff8844'));
     return;
   }
 
   const tile = getTile(state, newX, newY);
 
-  // Lethal terrain
   if (isLethalTerrain(tile)) {
     const anim = createPushAnimation(unit, unit.x, unit.y, newX, newY, () => {
       unit.x = newX;
@@ -174,14 +143,12 @@ export function applyPush(state, unit, dx, dy) {
     return;
   }
 
-  // Blocked by mountain
   if (isBlockingTerrain(tile)) {
     applyDamage(state, unit, 1);
     state.animations.push(createImpactVFX(unit.x, unit.y, '#ff8844'));
     return;
   }
 
-  // Collision with another unit
   const blockingUnit = getUnitAt(state, newX, newY);
   if (blockingUnit) {
     applyDamage(state, unit, 1);
@@ -190,18 +157,15 @@ export function applyPush(state, unit, dx, dy) {
     return;
   }
 
-  // Pushed into building destroys building
   if (tile === TERRAIN.BUILDING) {
     state.gridPower = Math.max(0, state.gridPower - 1);
     state.grid.tiles[newY][newX] = TERRAIN.GROUND;
     emit('buildingDestroyed', { x: newX, y: newY, gridPower: state.gridPower });
-    // unit takes bump damage hitting building
     applyDamage(state, unit, 1);
     state.animations.push(createImpactVFX(newX, newY, '#ff8844'));
     return;
   }
 
-  // Clear push - move the unit
   const fromX = unit.x;
   const fromY = unit.y;
   const anim = createPushAnimation(unit, fromX, fromY, newX, newY, () => {

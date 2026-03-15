@@ -1,5 +1,6 @@
 import { GRID_WIDTH, GRID_HEIGHT, TERRAIN } from '../constants.js';
 import { getTile, getUnitAt } from '../state.js';
+import { getTargetType } from '../systems/targeting.js';
 
 export const DIRS = [
   { x: 0, y: -1, name: 'up' },
@@ -62,45 +63,11 @@ export function getMovementRange(state, unit) {
   });
 }
 
-// Get attack range tiles based on ability
+// Get attack range tiles based on ability — delegates to target type plugin
 export function getAttackRange(state, unit, ability) {
-  const tiles = [];
-  if (!ability) return tiles;
-
-  if (ability.targetType === 'melee') {
-    for (const dir of DIRS) {
-      const nx = unit.x + dir.x;
-      const ny = unit.y + dir.y;
-      if (inBounds(nx, ny)) tiles.push({ x: nx, y: ny });
-    }
-  } else if (ability.targetType === 'ranged') {
-    for (let dx = -ability.range; dx <= ability.range; dx++) {
-      for (let dy = -ability.range; dy <= ability.range; dy++) {
-        if (dx === 0 && dy === 0) continue;
-        const dist = Math.abs(dx) + Math.abs(dy);
-        if (dist <= ability.range && dist >= (ability.minRange || 1)) {
-          const nx = unit.x + dx;
-          const ny = unit.y + dy;
-          if (inBounds(nx, ny)) tiles.push({ x: nx, y: ny });
-        }
-      }
-    }
-  } else if (ability.targetType === 'line') {
-    // Shoot in 4 cardinal directions
-    for (const dir of DIRS) {
-      for (let i = 1; i <= (ability.range || 8); i++) {
-        const nx = unit.x + dir.x * i;
-        const ny = unit.y + dir.y * i;
-        if (!inBounds(nx, ny)) break;
-        tiles.push({ x: nx, y: ny });
-        const t = getTile(state, nx, ny);
-        if (t === TERRAIN.MOUNTAIN) break;
-        if (getUnitAt(state, nx, ny)) break;
-      }
-    }
-  }
-
-  return tiles;
+  if (!ability) return [];
+  const tt = getTargetType(ability.targetType);
+  return tt ? tt.getRange(unit, ability, state) : [];
 }
 
 // Get push direction from attacker to target

@@ -123,3 +123,25 @@ export function playDeathSound() {
   playNoise(ctx, 0.3, 0.2, 600, 'lowpass');
   setTimeout(() => playNoise(ctx, 0.2, 0.15, 300, 'lowpass'), 150);
 }
+
+// --- Sound registry for config-driven lookup ---
+
+const SOUND_REGISTRY = {
+  melee: playMeleeSound,
+  cannon: playCannonSound,
+  artillery: playArtillerySound,
+  explosion: playExplosionSound,
+  move: playMoveSound,
+  hit: playHitSound,
+  push: playPushSound,
+  death: playDeathSound,
+};
+
+export function playSoundByKey(key) {
+  const fn = SOUND_REGISTRY[key];
+  if (fn) fn();
+}
+
+export function registerSound(key, fn) {
+  SOUND_REGISTRY[key] = fn;
+}

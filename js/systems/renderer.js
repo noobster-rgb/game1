@@ -9,13 +9,25 @@ let portraitCanvas;
 
 // Portrait images keyed by unit type
 const portraitImages = {};
-const PORTRAIT_PATHS = {
-  cannonMech: 'assets/portraits/cannonMech_portrait.png',
-  combatMech: 'assets/portraits/combatMech_portrait.png',
-};
+let portraitPaths = {};
+
+/**
+ * Register portrait paths from unit configs.
+ * Called by initRegistry() — pulls portrait from each unit that has one.
+ */
+export function registerPortraits(unitTypes) {
+  portraitPaths = {};
+  for (const unit of Object.values(unitTypes)) {
+    if (unit.portrait) {
+      portraitPaths[unit.type] = unit.portrait;
+    }
+  }
+  loadPortraits();
+}
 
 function loadPortraits() {
-  for (const [type, src] of Object.entries(PORTRAIT_PATHS)) {
+  for (const [type, src] of Object.entries(portraitPaths)) {
+    if (portraitImages[type]) continue; // already loaded
     const img = new Image();
     img.onload = () => { portraitImages[type] = img; };
     img.onerror = () => { console.warn(`Failed to load portrait: ${src}`); };
